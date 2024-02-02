@@ -1,44 +1,59 @@
-import { json } from "@remix-run/server-runtime"
-import { NavLink, useLoaderData } from "@remix-run/react"
-import prisma from "../utils/db.server"
+import {
+  json,
+  type LoaderFunctionArgs,
+  type ActionFunctionArgs,
+} from "@remix-run/cloudflare";
+import { Form, useLoaderData } from "@remix-run/react";
 
-export const loader = async () => {
-  const Posts = await prisma.note.findMany({
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      updatedAt: true,
-    },
-  })
+const key = "__my-key__";
 
-  return json({ posts: Posts })
+export async function loader({ context }: LoaderFunctionArgs) {
+  const { MY_KV } = context.env;
+  const value = await MY_KV.get(key);
+  return json({ value });
+}
+
+export async function action({ request, context }: ActionFunctionArgs) {
+  const { MY_KV: myKv } = context.env;
+
+  if (request.method === "POST") {
+    const formData = await request.formData();
+    const value = formData.get("value") as string;
+    await myKv.put(key, value);
+    return null;
+  }
+
+  if (request.method === "DELETE") {
+    await myKv.delete(key);
+    return null;
+  }
+
+  throw new Error(`Method not supported: "${request.method}"`);
 }
 
 export default function Index() {
-  // const { posts } = useLoaderData() as DeferredData
-  const data = useLoaderData<typeof loader>()
-
+  const { value } = useLoaderData<typeof loader>();
   return (
-    <div className="mb-auto">
-      <div className="my-8"></div>
-      <h1> WELCOME TO A GAMING NEWS PLATFORM</h1>
-
-      <div className="container bg-background">
-        <ul className="overflow-y-auto overflow-x-hidden pb-12">
-          {data.posts && data.posts.length > 0 ? (
-            data.posts?.map((potz) => (
-              <li key={potz.id} className="my-4 border-2 border-green-300 px-2">
-                <NavLink to={potz.id} preventScrollReset>
-                  {potz.title}
-                </NavLink>
-              </li>
-            ))
-          ) : (
-            <p>No posts yet</p>
-          )}
-        </ul>
-      </div>
+    <div>
+      <h1>Welcome to Remix</h1>
+      {value ? (
+        <>
+          <p>Value: {value}</p>
+          <Form method="DELETE">
+            <button>Delete</button>
+          </Form>
+        </>
+      ) : (
+        <>
+          <p>No value</p>
+          <Form method="POST">
+            <label htmlFor="value">Set value: </label>
+            <input type="text" name="value" id="value" required />
+            <br />
+            <button>Save</button>
+          </Form>
+        </>
+      )}
     </div>
-  )
+  );
 }
