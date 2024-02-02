@@ -5,6 +5,9 @@ import { defineConfig } from "vite"
 
 export default defineConfig({
   clearScreen: false,
+  server: {
+    open: true,
+  },
   appType: "custom",
   ssr: {
     noExternal: true,
@@ -19,13 +22,6 @@ export default defineConfig({
         options.kvPersist = ".wrangler/state/v3/kv"
         options.r2Persist = ".wrangler/state/v3/r2"
         options.d1Persist = ".wrangler/state/v3/d1"
-
-        // @ts-ignore
-        options.kvNamespaces = ["KV"]
-        // @ts-ignore
-        options.r2Buckets = ["R2_BUCKET"]
-        // @ts-ignore
-        options.d1Databases = ["DB"]
       },
       preBundle: {
         include: [
@@ -33,6 +29,8 @@ export default defineConfig({
           "react/jsx-dev-runtime",
           "react-dom",
           "react-dom/server.browser",
+          "@prisma/client/edge",
+          "@prisma/extension-accelerate",
         ],
       },
       customRpc: {
