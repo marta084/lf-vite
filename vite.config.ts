@@ -5,14 +5,14 @@ import {
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { remixDevTools } from "remix-development-tools/vite";
+import remixConfig from "./remix.config";
 
 export default defineConfig({
   plugins: [
     remixDevTools(),
-    remix({
+    remix(remixConfig, {
       presets: [cloudflare()],
     }),
-
     tsconfigPaths(),
   ],
   server: {
