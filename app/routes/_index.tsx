@@ -2,15 +2,14 @@ import { Link } from "@remix-run/react";
 
 export default function Homepage() {
   return (
-    <div className="bg-slate-500 font-bold flex flex-1">
+    <>
       <Link to="login">Login</Link>
-      <h1 className="text-lime-200 mx-2 border-2 px-2">tHomeepage</h1>
-      <div>
-        <h4>test</h4>
+      <div className="bg-gray-900 text-teal-50 font-bold my-8 px-4">
+        <h1 className="mx-2 ">Homepage</h1>
         <div>
-          <div>test</div>
+          <h4>test</h4>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -9,8 +9,10 @@ import remixConfig from "./remix.config";
 
 export default defineConfig({
   plugins: [
-    remixDevTools(),
-    remix(remixConfig, {
+    remixDevTools({
+      pluginDir: "./plugins",
+    }),
+    remix({
       presets: [cloudflare()],
     }),
     tsconfigPaths(),

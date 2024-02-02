@@ -1,0 +1,10 @@
+note: vite having issue with browser extention, not render on change hydration error
+
+
+
+added: template: unstable vite cloudflare remix
+
+installed tailwind wit postcss,
+
+add remixdev tools, also tsconfigPaths
+
