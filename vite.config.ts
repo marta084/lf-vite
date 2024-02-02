@@ -8,11 +8,13 @@ import { remixDevTools } from "remix-development-tools/vite";
 import remixConfig from "./remix.config";
 
 export default defineConfig({
+  ...remixConfig,
   plugins: [
     remixDevTools({
       pluginDir: "./plugins",
     }),
     remix({
+      ...remixConfig,
       presets: [cloudflare()],
     }),
     tsconfigPaths(),
