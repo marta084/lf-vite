@@ -1,5 +1,12 @@
-import { Link, NavLink, defer, useLoaderData } from "@remix-run/react";
+import { defer } from "@remix-run/cloudflare";
+import { NavLink, useLoaderData } from "@remix-run/react";
 import prisma from "~/utils/db.server";
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// interface DeferredData {
+//   posts: Promise<string>
+// }
 
 export const loader = async () => {
   const Posts = await prisma.note.findMany({
@@ -9,37 +16,58 @@ export const loader = async () => {
       content: true,
       updatedAt: true,
     },
+    cacheStrategy: { ttl: 14400 },
   });
 
-  return defer({ posts: Posts });
+  return defer({ postz: Posts, posts: wait(1).then(() => Posts) });
 };
 
-export default function Homepage() {
+export default function Index() {
+  // const { posts } = useLoaderData() as DeferredData
   const data = useLoaderData<typeof loader>();
+
   return (
-    <>
-      <Link to="login">Login</Link>
-      <div className="bg-gray-900 text-teal-50 font-bold my-8 px-4">
-        <h1 className="mx-2 ">Homepage</h1>
-        <div className="">
-          <ul className="overflow-x-hidden pb-12">
-            {data.posts && data.posts.length > 0 ? (
-              data.posts?.map((post) => (
-                <li
-                  key={post.id}
-                  className="my-4 border-2 border-green-300 px-2"
-                >
-                  <NavLink to={post.id} preventScrollReset>
-                    {post.title}
-                  </NavLink>
-                </li>
-              ))
-            ) : (
-              <p>No posts yet</p>
+    <div className="mb-auto">
+      <div className="my-8"></div>
+      <h1> WELCOME TO A GAMING NEWS PLATFORM</h1>
+      {/* <div className="my-8">
+        <h1>posts:</h1>
+        <Suspense fallback={'Loading'}>
+          <Await resolve={posts}>
+            {posts => (
+              <ul>
+                {posts.map(post => (
+                  <li
+                    className="m-4 border-2 border-green-300 p-2"
+                    key={post.id}
+                  >
+                    <NavLink to={post.id}>
+                      <h1>{post.title}</h1>
+                      <p>{post.content}</p>
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
             )}
-          </ul>
-        </div>
+          </Await>
+        </Suspense>
+        <p>---------------------------------</p>
+      </div> */}
+      <div className="container bg-background">
+        <ul className="overflow-y-auto overflow-x-hidden pb-12">
+          {data.postz && data.postz.length > 0 ? (
+            data.postz?.map((potz) => (
+              <li key={potz.id} className="my-4 border-2 border-green-300 px-2">
+                <NavLink to={potz.id} preventScrollReset>
+                  {potz.title}
+                </NavLink>
+              </li>
+            ))
+          ) : (
+            <p>No posts yet</p>
+          )}
+        </ul>
       </div>
-    </>
+    </div>
   );
 }
