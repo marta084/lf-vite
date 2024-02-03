@@ -5,6 +5,5 @@ export const toastSessionStorage = createCookieSessionStorage({
     name: "en_toast",
     sameSite: "lax",
     path: "/",
-    httpOnly: true,
   },
 });

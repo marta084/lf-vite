@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React from "react";
 // All tailwind color variants, need to be defined like this so your project picks them up
 const colorVariants = {
@@ -220,6 +221,7 @@ const TailwindColorPallette = () => {
               <h6>{color}</h6>
               <div>
                 {colorVariants[color].map((variant: string) => (
+                  // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
                   <div
                     key={variant}
                     onClick={() => navigator.clipboard.writeText(variant)}
