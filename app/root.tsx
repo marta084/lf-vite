@@ -3,6 +3,7 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
   json,
+  type LinksFunction,
   type MetaFunction,
 } from "@remix-run/cloudflare";
 
@@ -24,6 +25,7 @@ import { csrf } from "~/utils/csrf.server";
 
 import Footer from "./components/site/footer";
 import Header from "./components/site/header";
+import { getEnv } from "./utils/env.server";
 
 import { Toaster, toast as showToast } from "sonner";
 
@@ -52,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     {
       theme: getTheme(request),
       toast,
-
+      ENV: getEnv(),
       csrfToken,
       honeyProps,
     },

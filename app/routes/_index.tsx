@@ -1,8 +1,8 @@
-import { defer } from "@remix-run/cloudflare";
-import { NavLink, useLoaderData } from "@remix-run/react";
-import prisma from "~/utils/db.server";
+import { defer } from '@remix-run/cloudflare'
+import { NavLink, useLoaderData } from '@remix-run/react'
+import prisma from '~/utils/db.server'
 
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const wait = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 // interface DeferredData {
 //   posts: Promise<string>
@@ -17,14 +17,14 @@ export const loader = async () => {
       updatedAt: true,
     },
     cacheStrategy: { ttl: 14400 },
-  });
+  })
 
-  return defer({ postz: Posts, posts: wait(1).then(() => Posts) });
-};
+  return defer({ postz: Posts, posts: wait(1).then(() => Posts) })
+}
 
 export default function Index() {
   // const { posts } = useLoaderData() as DeferredData
-  const data = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>()
 
   return (
     <div className="mb-auto">
@@ -56,7 +56,7 @@ export default function Index() {
       <div className="container bg-background">
         <ul className="overflow-y-auto overflow-x-hidden pb-12">
           {data.postz && data.postz.length > 0 ? (
-            data.postz?.map((potz) => (
+            data.postz?.map(potz => (
               <li key={potz.id} className="my-4 border-2 border-green-300 px-2">
                 <NavLink to={potz.id} preventScrollReset>
                   {potz.title}
@@ -69,5 +69,5 @@ export default function Index() {
         </ul>
       </div>
     </div>
-  );
+  )
 }

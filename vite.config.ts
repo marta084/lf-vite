@@ -7,6 +7,8 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { remixDevTools } from "remix-development-tools/vite";
 import remixConfig from "./remix.config";
 
+// Example of using MD5 hash
+
 export default defineConfig({
   plugins: [
     remixDevTools({

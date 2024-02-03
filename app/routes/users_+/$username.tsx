@@ -36,8 +36,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
   });
 }
 
-// --------------- action -----------------
-
 // --------------- component -----------------
 
 export default function UserRoute() {
