@@ -1,6 +1,6 @@
-import { conform, useForm } from '@conform-to/react'
-import { getFieldsetConstraint, parse } from '@conform-to/zod'
-import { type Note } from '@prisma/client'
+import { conform, useForm } from "@conform-to/react";
+import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import { type Note } from "@prisma/client";
 import {
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   json,
@@ -8,65 +8,65 @@ import {
   redirect,
   type SerializeFrom,
   type ActionFunctionArgs,
-} from '@remix-run/cloudflare'
-import { Form, useFetcher } from '@remix-run/react'
-import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
-import { HoneypotInputs } from 'remix-utils/honeypot/react'
-import { z } from 'zod'
-import { GeneralErrorBoundary } from '~/components/error-boundary'
-import { floatingToolbarClassName } from '~/components/floating-toolbar'
-import { ErrorList, Field, TextareaField } from '~/components/forms'
-import { Button } from '~/components/ui/button'
-import { StatusButton } from '~/components/ui/status-button'
-import { validateCSRF } from '~/utils/csrf.server'
-import prisma from '~/utils/db.server'
-import { checkHoneypot } from '~/utils/honeypot.server'
-import { useIsPending } from '~/utils/misc'
-import { toastSessionStorage } from '~/utils/toast.server'
+} from "@remix-run/cloudflare";
+import { Form, useFetcher } from "@remix-run/react";
+import { AuthenticityTokenInput } from "remix-utils/csrf/react";
+import { HoneypotInputs } from "remix-utils/honeypot/react";
+import { z } from "zod";
+import { GeneralErrorBoundary } from "~/components/error-boundary";
+import { floatingToolbarClassName } from "~/components/floating-toolbar";
+import { ErrorList, Field, TextareaField } from "~/components/forms";
+import { Button } from "~/components/ui/button";
+import { StatusButton } from "~/components/ui/status-button";
+import { validateCSRF } from "~/utils/csrf.server";
+import prisma from "~/utils/db.server";
+import { checkHoneypot } from "~/utils/honeypot.server";
+import { useIsPending } from "~/utils/misc";
+import { toastSessionStorage } from "~/utils/toast.server";
 
-const titleMinLength = 1
-const titleMaxLength = 100
-const contentMinLength = 1
-const contentMaxLength = 10000
+const titleMinLength = 1;
+const titleMaxLength = 100;
+const contentMinLength = 1;
+const contentMaxLength = 10000;
 
-const MAX_UPLOAD_SIZE = 1024 * 1024 * 3 // 3MB
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 3; // 3MB
 
 const NoteEditorSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(titleMinLength).max(titleMaxLength),
   content: z.string().min(contentMinLength).max(contentMaxLength),
-})
+});
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await parseMultipartFormData(
     request,
     createMemoryUploadHandler({ maxPartSize: MAX_UPLOAD_SIZE }),
-  )
-  await validateCSRF(formData, request.headers)
-  checkHoneypot(formData)
+  );
+  await validateCSRF(formData, request.headers);
+  checkHoneypot(formData);
 
   const submission = await parse(formData, {
     schema: NoteEditorSchema.transform(async ({ ...data }) => {
       return {
         ...data,
-      }
+      };
     }),
     async: true,
-  })
+  });
 
-  if (submission.intent !== 'submit') {
-    return json({ status: 'idle', submission } as const)
+  if (submission.intent !== "submit") {
+    return json({ status: "idle", submission } as const);
   }
 
   if (!submission.value) {
-    return json({ status: 'error', submission } as const, { status: 400 })
+    return json({ status: "error", submission } as const, { status: 400 });
   }
 
-  const { id: noteId, title, content } = submission.value
+  const { id: noteId, title, content } = submission.value;
 
   const updatedNote = await prisma.note.upsert({
     select: { id: true, owner: { select: { username: true } } },
-    where: { id: noteId ?? '__new_note__' },
+    where: { id: noteId ?? "__new_note__" },
     create: {
       owner: { connect: { username: params.username } },
       title,
@@ -77,49 +77,49 @@ export async function action({ request, params }: ActionFunctionArgs) {
       title,
       content,
     },
-  })
+  });
 
   const toastCookieSession = await toastSessionStorage.getSession(
-    request.headers.get('cookie'),
-  )
-  toastCookieSession.flash('toast', {
+    request.headers.get("cookie"),
+  );
+  toastCookieSession.flash("toast", {
     id: noteId,
-    type: 'success',
-    title: 'Add success',
-    description: 'Your note has been add/updated',
-  })
+    type: "success",
+    title: "Add success",
+    description: "Your note has been add/updated",
+  });
 
   return redirect(
     `/users/${updatedNote.owner?.username}/notes/${updatedNote.id}`,
     {
       headers: {
-        'set-cookie':
+        "set-cookie":
           await toastSessionStorage.commitSession(toastCookieSession),
       },
     },
-  )
+  );
 }
 
 export function NoteEditor({
   note,
 }: Readonly<{
-  note?: SerializeFrom<Pick<Note, 'id' | 'title' | 'content'>>
+  note?: SerializeFrom<Pick<Note, "id" | "title" | "content">>;
 }>) {
-  const noteFetcher = useFetcher<typeof action>()
-  const isPending = useIsPending()
+  const noteFetcher = useFetcher<typeof action>();
+  const isPending = useIsPending();
 
   const [form, fields] = useForm({
-    id: 'note-editor',
+    id: "note-editor",
     constraint: getFieldsetConstraint(NoteEditorSchema),
     lastSubmission: noteFetcher.data?.submission,
     onValidate({ formData }) {
-      return parse(formData, { schema: NoteEditorSchema })
+      return parse(formData, { schema: NoteEditorSchema });
     },
     defaultValue: {
-      title: note?.title ?? '',
-      content: note?.content ?? '',
+      title: note?.title ?? "",
+      content: note?.content ?? "",
     },
-  })
+  });
 
   return (
     <div className="">
@@ -140,7 +140,7 @@ export function NoteEditor({
         {note ? <input type="hidden" name="id" value={note.id} /> : null}
         <div className="flex flex-col gap-1">
           <Field
-            labelProps={{ children: 'Title' }}
+            labelProps={{ children: "Title" }}
             inputProps={{
               autoFocus: true,
               ...conform.input(fields.title),
@@ -148,7 +148,7 @@ export function NoteEditor({
             errors={fields.title.errors}
           />
           <TextareaField
-            labelProps={{ children: 'Content' }}
+            labelProps={{ children: "Content" }}
             textareaProps={{
               ...conform.textarea(fields.content),
             }}
@@ -165,13 +165,13 @@ export function NoteEditor({
           form={form.id}
           type="submit"
           disabled={isPending}
-          status={isPending ? 'pending' : 'idle'}
+          status={isPending ? "pending" : "idle"}
         >
           Submit
         </StatusButton>
       </div>
     </div>
-  )
+  );
 }
 
 export function ErrorBoundary() {
@@ -181,5 +181,5 @@ export function ErrorBoundary() {
         404: ({ params }) => <p>No note with the id {params.noteId} exists</p>,
       }}
     />
-  )
+  );
 }

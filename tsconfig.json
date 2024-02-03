@@ -1,5 +1,11 @@
 {
-  "include": ["env.d.ts", "**/*.ts", "**/*.tsx", "types/*.d.ts"],
+  "include": [
+    "env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "types/*.d.ts",
+    "plugins/*.tsx",
+  ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "isolatedModules": true,

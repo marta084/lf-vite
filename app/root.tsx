@@ -8,7 +8,6 @@ import {
 
 import {
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -138,7 +137,6 @@ function Document({
 
         <ScrollRestoration />
         <Scripts />
-        <LiveReload />
       </body>
     </html>
   );

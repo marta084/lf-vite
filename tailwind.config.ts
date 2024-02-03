@@ -3,7 +3,7 @@ import defaultTheme from "tailwindcss/defaultTheme.js";
 import animatePlugin from "tailwindcss-animate";
 
 export default {
-  content: ["./app/**/*.{ts,tsx,jsx,js}"],
+  content: ["./app/**/*.{ts,tsx,jsx,js}", "./plugins/*.tsx"],
   darkMode: "class",
   theme: {
     container: {
