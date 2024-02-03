@@ -1,9 +1,8 @@
-import { cssBundleHref } from "@remix-run/css-bundle";
+import "~/styles/tailwind.css?link";
 import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
   json,
-  type LinksFunction,
   type MetaFunction,
 } from "@remix-run/cloudflare";
 
@@ -20,18 +19,11 @@ import {
 } from "@remix-run/react";
 
 import { AuthenticityTokenProvider } from "remix-utils/csrf/react";
-import MartaBlogFavicon from "./assets/favicon.ico";
 import { GeneralErrorBoundary } from "./components/error-boundary";
 import { csrf } from "~/utils/csrf.server";
 
-// icon, styles, components
-import tailwindStyleSheet from "./styles/tailwind.css";
-import "./styles/global.css";
-import rdtStylesheet from "remix-development-tools/index.css";
-
 import Footer from "./components/site/footer";
 import Header from "./components/site/header";
-import { getEnv } from "./utils/env.server";
 
 import { Toaster, toast as showToast } from "sonner";
 
@@ -48,22 +40,6 @@ import { Spacer } from "./components/spacer";
 import { HoneypotProvider } from "remix-utils/honeypot/react";
 import { honeypot } from "./utils/honeypot.server";
 
-export const links: LinksFunction = () => {
-  return [
-    ...(process.env.NODE_ENV === "development"
-      ? [{ rel: "stylesheet", href: rdtStylesheet }]
-      : []),
-    // Preload svg sprite as a resource to avoid render blocking
-    { rel: "preload", href: MartaBlogFavicon, as: "image" },
-    // Preload CSS as a resource to avoid render blocking
-    { rel: "preload", href: tailwindStyleSheet, as: "style" },
-    cssBundleHref ? { rel: "preload", href: cssBundleHref, as: "style" } : null,
-    { rel: "icon", href: MartaBlogFavicon, type: "image/x-icon" },
-    { rel: "stylesheet", href: tailwindStyleSheet, precedence: "high" },
-    cssBundleHref ? { rel: "stylesheet", href: cssBundleHref } : null,
-  ].filter(Boolean);
-};
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const [csrfToken, csrfCookieHeader] = await csrf.commitToken(request);
   const honeyProps = honeypot.getInputProps();
@@ -76,7 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     {
       theme: getTheme(request),
       toast,
-      ENV: getEnv(),
+
       csrfToken,
       honeyProps,
     },
@@ -183,19 +159,12 @@ function App() {
   );
 }
 
-let AppExport = App;
-
-if (process.env.NODE_ENV === "development") {
-  const { withDevTools } = await import("remix-development-tools");
-  AppExport = withDevTools(AppExport);
-}
-
 export default function AppWithProviders() {
   const data = useLoaderData<typeof loader>();
   return (
     <AuthenticityTokenProvider token={data.csrfToken}>
       <HoneypotProvider {...data.honeyProps}>
-        <AppExport />
+        <App />
       </HoneypotProvider>
     </AuthenticityTokenProvider>
   );

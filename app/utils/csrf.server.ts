@@ -6,7 +6,7 @@ const cookie = createCookie("csrf", {
   httpOnly: true,
   secure: true,
   sameSite: "lax",
-  secrets: ["SESSION_SECRET"],
+  secrets: "marta",
 });
 
 export const csrf = new CSRF({ cookie });
