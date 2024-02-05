@@ -10,6 +10,7 @@ import {
   type ActionFunctionArgs,
 } from "@remix-run/cloudflare";
 import { Form, useFetcher } from "@remix-run/react";
+import { AuthenticityTokenInput } from "remix-utils/csrf/react";
 import { HoneypotInputs } from "remix-utils/honeypot/react";
 import { z } from "zod";
 import { GeneralErrorBoundary } from "~/components/error-boundary";
@@ -17,8 +18,10 @@ import { floatingToolbarClassName } from "~/components/floating-toolbar";
 import { ErrorList, Field, TextareaField } from "~/components/forms";
 import { Button } from "~/components/ui/button";
 import { StatusButton } from "~/components/ui/status-button";
+import { validateCSRF } from "~/utils/csrf.server";
 import prisma from "~/utils/db.server";
-import { useIsPending } from "~/utils/misc";
+import { checkHoneypot } from "~/utils/honeypot.server";
+import { invariant, useIsPending } from "~/utils/misc";
 import { toastSessionStorage } from "~/utils/toast.server";
 
 import { serverOnly$ } from "vite-env-only";
@@ -42,6 +45,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     createMemoryUploadHandler({ maxPartSize: MAX_UPLOAD_SIZE }),
   );
 
+  await serverOnly$(validateCSRF(formData, request.headers));
+  serverOnly$(checkHoneypot(formData));
   const submission = await parse(formData, {
     schema: NoteEditorSchema.transform(async ({ ...data }) => {
       return {
@@ -81,17 +86,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const toastCookieSession = serverOnly$(
     await toastSessionStorage.getSession(request.headers.get("cookie")),
   );
-  serverOnly$(
-    toastCookieSession.flash("toast", {
-      id: noteId,
-      type: "success",
-      title: "Add success",
-      description: "Your note has been add/updated",
-    }),
-  );
+  if (toastCookieSession) {
+    serverOnly$(
+      toastCookieSession.flash("toast", {
+        id: noteId,
+        type: "success",
+        title: "Add success",
+        description: "Your note has been add/updated",
+      }),
+    );
+  } else {
+    // Handle the case when the session is undefined
+    invariant(toastCookieSession, "test");
+  }
 
-  return redirect(
-    `/users/${updatedNote.owner?.username}/notes/${updatedNote.id}`,
+  return serverOnly$(
+    redirect(
+      `/users/${updatedNote?.owner?.username}/notes/${updatedNote?.id}`,
+      {
+        headers: {
+          "set-cookie":
+            await toastSessionStorage.commitSession(toastCookieSession),
+        },
+      },
+    ),
   );
 }
 
@@ -124,6 +142,8 @@ export function NoteEditor({
         {...form.props}
         encType="multipart/form-data"
       >
+        <AuthenticityTokenInput />
+        <HoneypotInputs />
         {/*
 					This hidden submit button is here to ensure that when the user hits
 					"enter" on an input field, the primary form function is submitted

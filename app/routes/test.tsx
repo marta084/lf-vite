@@ -1,23 +1,29 @@
 import { defer } from "@remix-run/cloudflare";
 import { NavLink, useLoaderData } from "@remix-run/react";
+
 import { z } from "zod";
 import prisma from "~/utils/db.server";
 import { cn } from "~/utils/misc";
 
-const NotesSchema = z.object({
-  id: z.string(),
-  title: z.string().nullable(),
-});
+import { serverOnly$ } from "vite-env-only";
+
+const NotesSchema = serverOnly$(
+  z.object({
+    id: z.string(),
+    title: z.string().nullable(),
+  }),
+);
 
 export async function loader() {
-  const notes = await prisma.note.findMany({
-    select: {
-      id: true,
-      title: true,
-    },
-    cacheStrategy: { ttl: 14400 },
-  });
-  const validatedNotes = NotesSchema.array().parse(notes);
+  const notes = serverOnly$(
+    await prisma.note.findMany({
+      select: {
+        id: true,
+        title: true,
+      },
+    }),
+  );
+  const validatedNotes = serverOnly$(NotesSchema?.array().parse(notes));
 
   return defer({ notes: validatedNotes });
 }

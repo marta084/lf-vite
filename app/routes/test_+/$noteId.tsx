@@ -1,27 +1,31 @@
-import { defer, type LoaderFunctionArgs } from '@remix-run/cloudflare'
-import { useLoaderData } from '@remix-run/react'
-import prisma from '~/utils/db.server'
-import { invariantResponse } from '~/utils/misc'
-import { GeneralErrorBoundary } from '~/components/error-boundary'
+import { defer, type LoaderFunctionArgs } from "@remix-run/cloudflare";
+import { useLoaderData } from "@remix-run/react";
+import prisma from "~/utils/db.server";
+import { invariantResponse } from "~/utils/misc";
+import { GeneralErrorBoundary } from "~/components/error-boundary";
+
+import { serverOnly$ } from "vite-env-only";
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const note = await prisma.note.findFirst({
-    where: { id: params.noteId },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-    },
-    cacheStrategy: { ttl: 14400 },
-  })
-  invariantResponse(note, 'Note not found', { status: 404 })
+  const note = serverOnly$(
+    await prisma.note.findFirst({
+      where: { id: params.noteId },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+      },
+      cacheStrategy: { ttl: 14400 },
+    }),
+  );
+  invariantResponse(note, "Note not found", { status: 404 });
   return defer({
     note,
-  })
+  });
 }
 
 export default function NoteTestId() {
-  const data = useLoaderData<typeof loader>()
+  const data = useLoaderData<typeof loader>();
 
   return (
     <div>
@@ -30,7 +34,7 @@ export default function NoteTestId() {
       </h1>
       <div>Content: {data.note.content}</div>
     </div>
-  )
+  );
 }
 
 export function ErrorBoundary() {
@@ -38,9 +42,9 @@ export function ErrorBoundary() {
     <GeneralErrorBoundary
       statusHandlers={{
         404: ({ params }) => {
-          return <p>No note with the id {params.noteId} exists</p>
+          return <p>No note with the id {params.noteId} exists</p>;
         },
       }}
     />
-  )
+  );
 }

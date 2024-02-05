@@ -1,9 +1,9 @@
-import "~/styles/tailwind.css?link";
 import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
   json,
   type MetaFunction,
+  LinksFunction,
 } from "@remix-run/cloudflare";
 
 import {
@@ -39,6 +39,14 @@ import { useEffect } from "react";
 import { Spacer } from "./components/spacer";
 import { HoneypotProvider } from "remix-utils/honeypot/react";
 import { honeypot } from "./utils/honeypot.server";
+import { withSentry } from "@sentry/remix";
+
+import "~/styles/tailwind.css";
+import lficon from "~/assets/favicon.ico";
+
+export const links: LinksFunction = () => {
+  return [{ rel: "icon", href: lficon }];
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const [csrfToken, csrfCookieHeader] = await csrf.commitToken(request);
@@ -158,7 +166,7 @@ function App() {
   );
 }
 
-export default function AppWithProviders() {
+function AppWithProviders() {
   const data = useLoaderData<typeof loader>();
   return (
     <AuthenticityTokenProvider token={data.csrfToken}>
@@ -168,6 +176,8 @@ export default function AppWithProviders() {
     </AuthenticityTokenProvider>
   );
 }
+
+export default withSentry(AppWithProviders);
 
 function useTheme() {
   const data = useLoaderData<typeof loader>();

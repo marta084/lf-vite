@@ -1,76 +1,77 @@
-import { type ActionFunctionArgs, json, redirect } from '@remix-run/cloudflare'
-import { conform, useForm } from '@conform-to/react'
-import { getFieldsetConstraint, parse } from '@conform-to/zod'
+import { type ActionFunctionArgs, json, redirect } from "@remix-run/cloudflare";
+import { conform, useForm } from "@conform-to/react";
+import { getFieldsetConstraint, parse } from "@conform-to/zod";
 
-import { z } from 'zod'
+import { z } from "zod";
 
-import { HoneypotInputs } from 'remix-utils/honeypot/react'
+import { HoneypotInputs } from "remix-utils/honeypot/react";
 
-import { Field } from '~/components/forms'
-import { validateCSRF } from '~/utils/csrf.server'
+import { Field } from "~/components/forms";
+import { validateCSRF } from "~/utils/csrf.server";
 
-import { StatusButton } from '~/components/ui/status-button'
-import { useIsPending } from '~/utils/misc'
-import { AuthenticityTokenInput } from 'remix-utils/csrf/react'
-import { PasswordSchema, UsernameSchema } from '~/utils/user-validation'
-import { Form, Link, useActionData } from '@remix-run/react'
-import { checkHoneypot } from '~/utils/honeypot.server'
-import { GeneralErrorBoundary } from '~/components/error-boundary'
+import { StatusButton } from "~/components/ui/status-button";
+import { useIsPending } from "~/utils/misc";
+import { AuthenticityTokenInput } from "remix-utils/csrf/react";
+import { PasswordSchema, UsernameSchema } from "~/utils/user-validation";
+import { Form, Link, useActionData } from "@remix-run/react";
+import { checkHoneypot } from "~/utils/honeypot.server";
+import { GeneralErrorBoundary } from "~/components/error-boundary";
+import { serverOnly$ } from "vite-env-only";
 
 export const loader = async () => {
-  return null
-}
+  return null;
+};
 
 const LoginFormSchema = z.object({
   username: UsernameSchema,
   password: PasswordSchema,
-})
+});
 
 export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData()
-  await validateCSRF(formData, request.headers)
-  checkHoneypot(formData)
+  const formData = await request.formData();
+  await serverOnly$(validateCSRF(formData, request.headers));
+  serverOnly$(checkHoneypot(formData));
 
   const submission = await parse(formData, {
-    schema: intent =>
+    schema: (intent) =>
       LoginFormSchema.transform(async (data, ctx) => {
-        if (intent !== 'submit') return { ...data, user: null }
+        if (intent !== "submit") return { ...data, user: null };
 
-        return data
+        return data;
       }),
 
     async: true,
-  })
+  });
 
   // get the password off the payload that's sent back
-  delete submission.payload.password
+  delete submission.payload.password;
 
-  if (submission.intent !== 'submit') {
+  if (submission.intent !== "submit") {
     // @ts-expect-error - conform should probably have support for doing this
-    delete submission.value?.password
-    return json({ status: 'idle', submission } as const)
+    delete submission.value?.password;
+    return json({ status: "idle", submission } as const);
   }
   // ?? you can change this check to !submission.value?.user
   if (!submission.value) {
-    return json({ status: 'error', submission } as const, { status: 400 })
+    return json({ status: "error", submission } as const, { status: 400 });
   }
   // Do something with the data
-  return redirect('/')
+  return redirect("/");
 }
 
 export default function LoginPage() {
-  const actionData = useActionData<typeof action>()
-  const isPending = useIsPending()
+  const actionData = useActionData<typeof action>();
+  const isPending = useIsPending();
 
   const [form, fields] = useForm({
-    id: 'login-form',
+    id: "login-form",
     constraint: getFieldsetConstraint(LoginFormSchema),
     lastSubmission: actionData?.submission,
     onValidate({ formData }) {
-      return parse(formData, { schema: LoginFormSchema })
+      return parse(formData, { schema: LoginFormSchema });
     },
-    shouldRevalidate: 'onBlur',
-  })
+    shouldRevalidate: "onBlur",
+  });
 
   return (
     <div className="container flex min-h-full flex-col justify-center pb-32 pt-20">
@@ -90,7 +91,7 @@ export default function LoginPage() {
           <HoneypotInputs />
           <div>
             <Field
-              labelProps={{ children: 'Username' }}
+              labelProps={{ children: "Username" }}
               inputProps={{
                 autoFocus: true,
                 ...conform.input(fields.username),
@@ -98,7 +99,7 @@ export default function LoginPage() {
               errors={fields.username.errors}
             />
             <Field
-              labelProps={{ children: 'Password' }}
+              labelProps={{ children: "Password" }}
               inputProps={{
                 ...conform.input(fields.password),
               }}
@@ -118,7 +119,7 @@ export default function LoginPage() {
           </div>
           <StatusButton
             className="w-full"
-            status={isPending ? 'pending' : actionData?.status ?? 'idle'}
+            status={isPending ? "pending" : actionData?.status ?? "idle"}
             type="submit"
             disabled={isPending}
           >
@@ -127,7 +128,7 @@ export default function LoginPage() {
         </Form>
       </div>
     </div>
-  )
+  );
 }
 
 export function ErrorBoundary() {
@@ -135,9 +136,9 @@ export function ErrorBoundary() {
     <GeneralErrorBoundary
       statusHandlers={{
         400: () => {
-          return <p>Form not submitted properly</p>
+          return <p>Form not submitted properly</p>;
         },
       }}
     />
-  )
+  );
 }

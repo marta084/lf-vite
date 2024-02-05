@@ -2,6 +2,8 @@ import { defer } from "@remix-run/cloudflare";
 import { NavLink, useLoaderData } from "@remix-run/react";
 import prisma from "~/utils/db.server";
 
+import { serverOnly$ } from "vite-env-only";
+
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // interface DeferredData {
@@ -9,15 +11,17 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // }
 
 export const loader = async () => {
-  const Posts = await prisma.note.findMany({
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      updatedAt: true,
-    },
-    cacheStrategy: { ttl: 14400 },
-  });
+  const Posts = serverOnly$(
+    await prisma.note.findMany({
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        updatedAt: true,
+      },
+      // cacheStrategy: { ttl: 14400 },
+    }),
+  );
 
   return defer({ postz: Posts, posts: wait(1).then(() => Posts) });
 };
@@ -59,9 +63,9 @@ export default function Index() {
             data.postz?.map((potz) => (
               <li
                 key={potz.id}
-                className="my-4 bg-blue-50 border-2 border-green-300 px-2"
+                className="my-4 bg-header border-2 border-green-300 px-2"
               >
-                <NavLink to={potz.id} preventScrollReset>
+                <NavLink to={`/test/${potz.id}`} preventScrollReset>
                   {potz.title}
                 </NavLink>
               </li>

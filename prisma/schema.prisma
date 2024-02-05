@@ -30,10 +30,7 @@ model Note {
   owner     User?       @relation(onDelete: Cascade, onUpdate: Cascade, fields: [ownerId], references: [id])
   noteImage NoteImage[]
 
-    // non-unique foreign key
-  @@index([ownerId])
-  // This helps our order by in the user search a LOT
-  @@index([ownerId, updatedAt])
+  @@index(fields: [ownerId, updatedAt])
 }
 
 model NoteImage {

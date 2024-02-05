@@ -1,13 +1,25 @@
 import {
   json,
   type LoaderFunctionArgs,
+  type ActionFunctionArgs,
   type MetaFunction,
+  redirect,
+  unstable_composeUploadHandlers as composeUploadHandlers,
+  unstable_createMemoryUploadHandler as createMemoryUploadHandler,
+  unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/cloudflare";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
 import { GeneralErrorBoundary } from "~/components/error-boundary";
 import prisma from "~/utils/db.server";
-import { invariantResponse } from "~/utils/misc";
+import { invariantResponse, useIsPending } from "~/utils/misc";
+import { AuthenticityTokenInput } from "remix-utils/csrf/react";
+import { validateCSRF } from "~/utils/csrf.server";
+import { uploadImage } from "~/utils/cloudinary.server";
 
+import { StatusButton } from "~/components/ui/status-button";
+import { conform, useForm } from "@conform-to/react";
+import { getFieldsetConstraint, parse } from "@conform-to/zod";
+import { z } from "zod";
 import { formatDistanceToNow } from "date-fns";
 
 // --------------- loader -----------------
@@ -36,16 +48,51 @@ export async function loader({ params }: LoaderFunctionArgs) {
   });
 }
 
+// Client-side schema
+const formSchema = z.object({
+  img: z.string(),
+});
+
+// Server-side schema
+const actionSchema = z.object({
+  img: z.string().url(),
+});
+
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 3; // 3MB
+
+// --------------- action -----------------
+
+export const action = async ({ request, params }: ActionFunctionArgs) => {
+  console.log(
+    "------------------------------ started action -----------------",
+  );
+
+  invariantResponse(params.username, "Username is required", { status: 400 });
+
+  return redirect(`/users/${params.username}`);
+};
+
 // --------------- component -----------------
 
 export default function UserRoute() {
   const data = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const user = data.user;
   const userDisplayName = user.name ?? user.username;
+  const isPending = useIsPending();
+
+  const [form, fields] = useForm({
+    id: "img-upload",
+    constraint: getFieldsetConstraint(formSchema),
+    lastSubmission: (actionData as { submission?: never })?.submission,
+    onValidate({ formData }) {
+      return parse(formData, { schema: formSchema });
+    },
+  });
 
   return (
     <div className=" flex justify-between">
-      <div className="mb-auto flex w-full items-center">
+      <div className="w-full mb-auto flex items-center">
         {/* <h1 className="m-4">
 					user profile: {data.user.name ?? data.user.username}
 				</h1> */}
@@ -65,7 +112,7 @@ export default function UserRoute() {
 
         <Link
           to={`/users/${data.user.username}`}
-          className=" overflow-hidden rounded-lg bg-muted px-4 text-lg font-bold text-gray-100 shadow-sm transition duration-200 ease-in-out"
+          className=" px-4 shadow-sm rounded-lg overflow-hidden text-lg font-bold bg-muted text-gray-100 transition duration-200 ease-in-out"
         >
           {userDisplayName}
         </Link>
@@ -77,11 +124,35 @@ export default function UserRoute() {
         <div className="pb-4">
           <Link
             to={`/users/${data.user.username}/notes`}
-            className="overflow-hidden rounded-lg bg-muted text-lg font-bold shadow-sm  duration-200 ease-in-out hover:transition"
+            className="bg-muted shadow-sm rounded-lg overflow-hidden text-lg font-bold  hover:transition duration-200 ease-in-out"
           >
             {userDisplayName} Notes
           </Link>
         </div>
+      </div>
+
+      <div className="">
+        <Form method="post" encType="multipart/form-data" {...form.props}>
+          <AuthenticityTokenInput />
+          <label htmlFor={fields.img.id}>Image upload:</label>
+          <input type="file" {...conform.input(fields.img)} />
+
+          {fields.img.errors ? (
+            <div className="text-red-400" role="alert">
+              {fields.img.errors[0]}
+            </div>
+          ) : null}
+
+          <StatusButton
+            className="bg-slate-500 p-4 text-white mt-2"
+            type="submit"
+            disabled={isPending}
+            status={isPending ? "pending" : "idle"}
+          >
+            Upload
+          </StatusButton>
+          <div>{form.error}</div>
+        </Form>
       </div>
     </div>
   );
