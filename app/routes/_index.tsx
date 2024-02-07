@@ -58,7 +58,7 @@ export default function Index() {
         <p>---------------------------------</p>
       </div> */}
       <div className="container bg-background">
-        <ul className="overflow-y-auto overflow-x-hidden pb-12">
+        {/* <ul className="overflow-y-auto overflow-x-hidden pb-12">
           {data.postz && data.postz.length > 0 ? (
             data.postz?.map((potz) => (
               <li
@@ -73,7 +73,7 @@ export default function Index() {
           ) : (
             <p>No posts yet</p>
           )}
-        </ul>
+        </ul> */}
       </div>
     </div>
   );
